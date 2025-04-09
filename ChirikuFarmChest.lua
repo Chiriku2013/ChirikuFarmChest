@@ -1,175 +1,147 @@
-repeat wait() until game:IsLoaded()
+--===[ Farm Chest Tối Ưu Nhất | Hop Server | Mobile Stable ]===--
 
--- // Auto chọn team
-local teamToJoin = "Marines" -- ← Đổi thành "Marines" nếu muốn
-spawn(function()
-    while not game:IsLoaded() do wait() end
-    wait(2)
+-- Cấu hình
+getgenv().ChestFarm = {
+    Enabled = false,
+    Speed = 350,
+    Team = "Marines",
+    DelayHop = 3,
+    AntiLoopHop = 10,
+}
 
-    local plr = game.Players.LocalPlayer
-    local choose = game:GetService("ReplicatedStorage").Remotes.ChooseTeam
+local JoinedAt = tick()
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+local RS = game:GetService("ReplicatedStorage")
+local WS = game:GetService("Workspace")
+local TS = game:GetService("TweenService")
+local TP = game:GetService("TeleportService")
+local Http = game:GetService("HttpService")
 
-    if plr.Team == nil then
-        choose:FireServer(teamToJoin)
-    elseif plr.Team.Name ~= teamToJoin then
-        warn("Sai team, đang reset để đổi...")
-        plr.Character:BreakJoints()
-        wait(5)
-        choose:FireServer(teamToJoin)
-    end
+-- Anti AFK
+pcall(function()
+    local vu = game:GetService("VirtualUser")
+    Player.Idled:Connect(function()
+        vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        task.wait(1)
+        vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+    end)
 end)
 
--- // Giới thiệu
-print("====== Chest Farm V5 ======")
-print("Auto Team | Full Chest Fix | GUI | Server Hop | Fly Bypass | Delta X")
-print("================================")
+-- Auto Team
+coroutine.wrap(function()
+    repeat
+        RS.Remotes.CommF_:InvokeServer("SetTeam", getgenv().ChestFarm.Team)
+        task.wait(1)
+    until Player.Team
+end)()
 
--- // Anti AFK
-game.Players.LocalPlayer.Idled:Connect(function()
-    game:GetService("VirtualUser"):Button2Down(Vector2.new(), workspace.CurrentCamera.CFrame)
-    wait(1)
-    game:GetService("VirtualUser"):Button2Up(Vector2.new(), workspace.CurrentCamera.CFrame)
-end)
-
--- // Biến
-local farming = false
-local speed = 120
-
--- // GUI
+-- UI
 local gui = Instance.new("ScreenGui", game.CoreGui)
-gui.Name = "ChestFarmGUI"
+gui.Name = "ChestUI"
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 250, 0, 180)
-frame.Position = UDim2.new(0.5, -125, 0.2, 0)
-frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+frame.Size = UDim2.new(0, 170, 0, 130)
+frame.Position = UDim2.new(1, -180, 1, -150)
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+frame.BackgroundTransparency = 0.2
 frame.BorderSizePixel = 0
-frame.Active = true
-frame.Draggable = true
-Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
 
 local title = Instance.new("TextLabel", frame)
-title.Text = "Chest Farm V5"
-title.Size = UDim2.new(1, 0, 0, 30)
+title.Text = "Chest Farm"
+title.Size = UDim2.new(1, 0, 0, 25)
+title.TextColor3 = Color3.new(1, 1, 1)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.TextSize = 20
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextScaled = true
+
+local status = Instance.new("TextLabel", frame)
+status.Position = UDim2.new(0, 0, 0, 25)
+status.Size = UDim2.new(1, 0, 0, 40)
+status.TextColor3 = Color3.new(1, 1, 1)
+status.BackgroundTransparency = 1
+status.Font = Enum.Font.Gotham
+status.TextScaled = true
+status.Text = "OFF"
 
 local toggle = Instance.new("TextButton", frame)
-toggle.Position = UDim2.new(0.5, -75, 0, 40)
-toggle.Size = UDim2.new(0, 150, 0, 35)
-toggle.Text = "BẬT FARM"
-toggle.BackgroundColor3 = Color3.fromRGB(50, 100, 200)
-toggle.TextColor3 = Color3.new(1,1,1)
+toggle.Position = UDim2.new(0, 0, 0, 70)
+toggle.Size = UDim2.new(1, 0, 0, 25)
+toggle.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+toggle.TextColor3 = Color3.new(1, 1, 1)
+toggle.Text = "Toggle Farm"
+toggle.TextScaled = true
 toggle.Font = Enum.Font.GothamBold
-toggle.TextSize = 18
-toggle.BorderSizePixel = 0
-Instance.new("UICorner", toggle).CornerRadius = UDim.new(0, 8)
-
-local speedLabel = Instance.new("TextLabel", frame)
-speedLabel.Text = "Tốc độ: "..speed
-speedLabel.Position = UDim2.new(0, 15, 0, 85)
-speedLabel.Size = UDim2.new(0, 200, 0, 25)
-speedLabel.BackgroundTransparency = 1
-speedLabel.Font = Enum.Font.Gotham
-speedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-speedLabel.TextSize = 16
-speedLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-local speedBox = Instance.new("TextBox", frame)
-speedBox.Position = UDim2.new(0, 15, 0, 110)
-speedBox.Size = UDim2.new(0, 220, 0, 30)
-speedBox.PlaceholderText = "Nhập tốc độ (ví dụ: 120)"
-speedBox.Text = tostring(speed)
-speedBox.Font = Enum.Font.Gotham
-speedBox.TextSize = 16
-speedBox.TextColor3 = Color3.fromRGB(255,255,255)
-speedBox.BackgroundColor3 = Color3.fromRGB(40,40,40)
-speedBox.BorderSizePixel = 0
-Instance.new("UICorner", speedBox).CornerRadius = UDim.new(0, 6)
 
 toggle.MouseButton1Click:Connect(function()
-    farming = not farming
-    toggle.Text = farming and "TẮT FARM" or "BẬT FARM"
-    toggle.BackgroundColor3 = farming and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(50, 100, 200)
+    getgenv().ChestFarm.Enabled = not getgenv().ChestFarm.Enabled
+    status.Text = getgenv().ChestFarm.Enabled and "ON" or "OFF"
 end)
+
+local speedBox = Instance.new("TextBox", frame)
+speedBox.PlaceholderText = "Speed: "..getgenv().ChestFarm.Speed
+speedBox.Position = UDim2.new(0, 0, 0, 100)
+speedBox.Size = UDim2.new(1, 0, 0, 25)
+speedBox.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+speedBox.TextColor3 = Color3.new(1, 1, 1)
+speedBox.TextScaled = true
+speedBox.Font = Enum.Font.Gotham
+speedBox.ClearTextOnFocus = false
 
 speedBox.FocusLost:Connect(function()
     local val = tonumber(speedBox.Text)
-    if val and val > 0 then
-        speed = val
-        speedLabel.Text = "Tốc độ: " .. tostring(speed)
-    else
-        speedBox.Text = tostring(speed)
-    end
+    if val then getgenv().ChestFarm.Speed = val end
 end)
 
--- // Fly mượt
-local TweenService = game:GetService("TweenService")
-function flyTo(pos)
-    local hrp = game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart")
-    local dist = (hrp.Position - pos).Magnitude
-    local time = dist / speed
-    local tween = TweenService:Create(hrp, TweenInfo.new(time, Enum.EasingStyle.Linear), {CFrame = CFrame.new(pos + Vector3.new(0, 4, 0))})
-    tween:Play()
-    tween.Completed:Wait()
+-- Tween function
+local function MoveTo(pos)
+    local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        local dist = (hrp.Position - pos).Magnitude
+        local ti = TweenInfo.new(dist / getgenv().ChestFarm.Speed, Enum.EasingStyle.Linear)
+        TS:Create(hrp, ti, {CFrame = CFrame.new(pos)}):Play()
+        task.wait(dist / getgenv().ChestFarm.Speed)
+    end
 end
 
--- // Server Hop
-function serverHop()
-    local HttpService = game:GetService("HttpService")
-    local TeleportService = game:GetService("TeleportService")
-    local PlaceID = game.PlaceId
-    local req = (syn and syn.request) or http_request or request
-    if not req then return end
-
-    local servers = {}
-    local url = "https://games.roblox.com/v1/games/"..PlaceID.."/servers/Public?sortOrder=Asc&limit=100"
-    local res = req({Url = url, Method = "GET"})
-    local data = HttpService:JSONDecode(res.Body)
-
-    for _, v in pairs(data.data) do
-        if v.playing < v.maxPlayers then
-            table.insert(servers, v.id)
+-- Hop Server
+local function Hop()
+    if tick() - JoinedAt < getgenv().ChestFarm.AntiLoopHop then return end
+    local req = (syn and syn.request or http_request or request)
+    local res = req({Url = "https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"})
+    local data = Http:JSONDecode(res.Body)
+    for _,v in pairs(data.data) do
+        if v.playing < v.maxPlayers and v.id ~= game.JobId then
+            TP:TeleportToPlaceInstance(game.PlaceId, v.id, Player)
+            break
         end
     end
-
-    if #servers > 0 then
-        TeleportService:TeleportToPlaceInstance(PlaceID, servers[math.random(1, #servers)], game.Players.LocalPlayer)
-    end
 end
 
--- // Farm Loop
+-- Main loop
 spawn(function()
-    while wait() do
-        if farming then
-            wait(2)
-
-            local chests = {}
-            for _, v in pairs(workspace:GetDescendants()) do
-                if v:IsA("Model") and v:FindFirstChild("TouchInterest", true) and v.Name:lower():find("chest") then
-                    local part = v:FindFirstChildWhichIsA("BasePart")
-                    if part then
-                        table.insert(chests, part)
+    while task.wait(0.5) do
+        if getgenv().ChestFarm.Enabled then
+            local found = false
+            for _,v in ipairs(WS:GetDescendants()) do
+                if v:IsA("Model") and v:FindFirstChild("TouchInterest") and v.Name:lower():find("chest") then
+                    found = true
+                    MoveTo(v:GetModelCFrame().p + Vector3.new(0,3,0))
+                    task.wait(0.25)
+                end
+            end
+            if not found then
+                task.wait(getgenv().ChestFarm.DelayHop)
+                local stillNothing = true
+                for _,v in ipairs(WS:GetDescendants()) do
+                    if v:IsA("Model") and v:FindFirstChild("TouchInterest") and v.Name:lower():find("chest") then
+                        stillNothing = false break
                     end
                 end
-            end
-
-            if #chests == 0 then
-                print("Hết rương → Đang chuyển server...")
-                wait(2)
-                serverHop()
-            else
-                for _, chest in pairs(chests) do
-                    pcall(function()
-                        flyTo(chest.Position)
-                        wait(0.5)
-                    end)
+                if stillNothing then
+                    Hop()
                 end
             end
-
-            wait(5)
         end
     end
 end)
