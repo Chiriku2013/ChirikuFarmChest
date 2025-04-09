@@ -1,58 +1,121 @@
 repeat wait() until game:IsLoaded()
 
--- // GIỚI THIỆU
+-- // Tự động vào team: "Pirates" hoặc "Marines"
+local teamToJoin = "Marines" -- ← Đổi thành "Marines" nếu bạn thích làm Hải Quân
+
+pcall(function()
+    if game.Players.LocalPlayer.Team == nil then
+        local choose = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("ChooseTeam")
+        choose:FireServer(teamToJoin)
+    end
+end)
+
+-- // Giới thiệu
 print("======================================")
 print(" Script: Farm Chest Blox Fruits ")
-print(" Style: Chiriku Roblox Hub | By Chiriku Roblox ")
-print(" Features: Safe Fly, Server Hop, GUI Toggle")
-print(" Executor: Delta X (Mobile supported)")
+print(" Version: V1 - Full Features ")
+print(" Features: Auto Team, Fly Speed, Server Hop, Skull GUI")
+print(" Executor: Delta X | Mobile Supported")
 print("======================================")
 
--- // ANTI AFK
+-- // Anti AFK
 game.Players.LocalPlayer.Idled:Connect(function()
-   game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
-   wait(1)
-   game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+    game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+    wait(1)
+    game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
 end)
 
--- // UI
+-- // Biến chính
 local farming = false
+local speed = 120
 
-local gui = Instance.new("ScreenGui")
-gui.Name = "ChestFarmGUI"
-gui.ResetOnSpawn = false
-gui.Parent = game.CoreGui
+-- // GUI
+local gui = Instance.new("ScreenGui", game.CoreGui)
+gui.Name = "ChestFarmV3"
 
-local btn = Instance.new("TextButton")
-btn.Parent = gui
-btn.Position = UDim2.new(0.5, -75, 0.1, 0)
-btn.Size = UDim2.new(0,150,0,40)
-btn.BackgroundColor3 = Color3.fromRGB(50, 50, 255)
-btn.Text = "BẬT FARM CHEST"
-btn.TextColor3 = Color3.new(1,1,1)
-btn.Font = Enum.Font.SourceSansBold
-btn.TextSize = 20
-btn.BorderSizePixel = 0
-btn.AutoButtonColor = true
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 250, 0, 180)
+frame.Position = UDim2.new(0.5, -125, 0.2, 0)
+frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
 
-btn.MouseButton1Click:Connect(function()
+local title = Instance.new("TextLabel", frame)
+title.Text = "Farm Chest Hub V3"
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.TextSize = 20
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+-- Nút bật/tắt
+local toggle = Instance.new("TextButton", frame)
+toggle.Position = UDim2.new(0.5, -75, 0, 40)
+toggle.Size = UDim2.new(0, 150, 0, 35)
+toggle.Text = "BẬT FARM"
+toggle.BackgroundColor3 = Color3.fromRGB(50, 100, 200)
+toggle.TextColor3 = Color3.new(1,1,1)
+toggle.Font = Enum.Font.GothamBold
+toggle.TextSize = 18
+toggle.BorderSizePixel = 0
+Instance.new("UICorner", toggle).CornerRadius = UDim.new(0, 8)
+
+-- Nhãn tốc độ
+local speedLabel = Instance.new("TextLabel", frame)
+speedLabel.Text = "Tốc độ: "..speed
+speedLabel.Position = UDim2.new(0, 15, 0, 85)
+speedLabel.Size = UDim2.new(0, 200, 0, 25)
+speedLabel.BackgroundTransparency = 1
+speedLabel.Font = Enum.Font.Gotham
+speedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+speedLabel.TextSize = 16
+speedLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Thanh nhập tốc độ
+local speedBox = Instance.new("TextBox", frame)
+speedBox.Position = UDim2.new(0, 15, 0, 110)
+speedBox.Size = UDim2.new(0, 220, 0, 30)
+speedBox.PlaceholderText = "Nhập tốc độ (ví dụ: 120)"
+speedBox.Text = tostring(speed)
+speedBox.Font = Enum.Font.Gotham
+speedBox.TextSize = 16
+speedBox.TextColor3 = Color3.fromRGB(255,255,255)
+speedBox.BackgroundColor3 = Color3.fromRGB(40,40,40)
+speedBox.BorderSizePixel = 0
+Instance.new("UICorner", speedBox).CornerRadius = UDim.new(0, 6)
+
+-- Bật/tắt farm
+toggle.MouseButton1Click:Connect(function()
     farming = not farming
-    btn.Text = farming and "TẮT FARM CHEST" or "BẬT FARM CHEST"
-    btn.BackgroundColor3 = farming and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(50, 50, 255)
+    toggle.Text = farming and "TẮT FARM" or "BẬT FARM"
+    toggle.BackgroundColor3 = farming and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(50, 100, 200)
 end)
 
--- // FLY TO FUNCTION
+-- Đổi tốc độ
+speedBox.FocusLost:Connect(function()
+    local val = tonumber(speedBox.Text)
+    if val and val > 0 then
+        speed = val
+        speedLabel.Text = "Tốc độ: " .. tostring(speed)
+    else
+        speedBox.Text = tostring(speed)
+    end
+end)
+
+-- Di chuyển đến chest bằng tween
 local TweenService = game:GetService("TweenService")
 function flyTo(pos)
     local hrp = game.Players.LocalPlayer.Character.HumanoidRootPart
-    local distance = (hrp.Position - pos).Magnitude
-    local time = distance / 120
+    local dist = (hrp.Position - pos).Magnitude
+    local time = dist / speed
     local tween = TweenService:Create(hrp, TweenInfo.new(time, Enum.EasingStyle.Linear), {CFrame = CFrame.new(pos + Vector3.new(0, 5, 0))})
     tween:Play()
     tween.Completed:Wait()
 end
 
--- // SERVER HOP
+-- Server hop nếu hết chest
 function serverHop()
     local HttpService = game:GetService("HttpService")
     local TeleportService = game:GetService("TeleportService")
@@ -76,10 +139,12 @@ function serverHop()
     end
 end
 
--- // MAIN FARM
+-- Farm Chest
 spawn(function()
     while wait() do
         if farming then
+            wait(2)
+
             local chests = {}
             for _, v in pairs(workspace:GetDescendants()) do
                 if v:IsA("Part") and v.Name == "Chest" then
