@@ -12,7 +12,7 @@ getgenv().ChestFarm = {
     Team = "Marines"
 }
 
--- Cập nhật trạng thái
+-- Cập nhật trạng thái farm
 local function SaveState()
     local state = {
         Enabled = getgenv().ChestFarm.Enabled,
@@ -44,51 +44,7 @@ game:BindToClose(function()
     SaveState()
 end)
 
--- Giới thiệu Script trên màn hình
-local infoGui = Instance.new("ScreenGui", game.CoreGui)
-infoGui.Name = "IntroGui"
-
-local holder = Instance.new("Frame", infoGui)
-holder.Size = UDim2.new(1, 0, 0, 50)
-holder.Position = UDim2.new(0, 0, 0, 0)
-holder.BackgroundTransparency = 1
-
-local title1 = Instance.new("TextLabel", holder)
-title1.Size = UDim2.new(0, 250, 1, 0)
-title1.Position = UDim2.new(0, 10, 0, 0)
-title1.BackgroundTransparency = 1
-title1.Text = "Farm Chest Script"
-title1.TextColor3 = Color3.fromRGB(255, 255, 0)
-title1.TextScaled = true
-title1.Font = Enum.Font.GothamBold
-title1.TextXAlignment = Enum.TextXAlignment.Left
-
-local title2 = Instance.new("TextLabel", holder)
-title2.Size = UDim2.new(0, 200, 1, 0)
-title2.Position = UDim2.new(0, 270, 0, 0)
-title2.BackgroundTransparency = 1
-title2.Text = "- Tác giả: Chiriku Roblox"
-title2.TextColor3 = Color3.fromRGB(0, 255, 0)
-title2.TextScaled = true
-title2.Font = Enum.Font.GothamBold
-title2.TextXAlignment = Enum.TextXAlignment.Left
-
-local status = Instance.new("TextLabel", holder)
-status.Size = UDim2.new(0, 200, 1, 0)
-status.Position = UDim2.new(0, 500, 0, 0)
-status.BackgroundTransparency = 1
-status.Text = "| Đang Tải..."
-status.TextColor3 = Color3.fromRGB(230, 230, 230)
-status.TextScaled = true
-status.Font = Enum.Font.Gotham
-status.TextXAlignment = Enum.TextXAlignment.Left
-
-task.spawn(function()
-    wait(3)
-    infoGui:Destroy()
-end)
-
--- UI Gọn (có logo)
+-- UI Gọn gàng
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "ChestUI"
 
@@ -100,13 +56,16 @@ frame.BackgroundTransparency = 0.2
 frame.BorderSizePixel = 0
 frame.ClipsDescendants = true
 
--- Logo của bạn
-local logo = Instance.new("ImageLabel", frame)
-logo.Size = UDim2.new(0, 30, 0, 30)
-logo.Position = UDim2.new(0, 5, 0, 0)
-logo.BackgroundTransparency = 1
-logo.Image = "rbxassetid://119198835819797" -- Thay ID này nếu bạn có logo riêng
-logo.ScaleType = Enum.ScaleType.Fit
+-- Thêm giới thiệu về script
+local intro = Instance.new("TextLabel", gui)
+intro.Size = UDim2.new(0, 400, 0, 30)
+intro.Position = UDim2.new(0.5, -200, 0.05, 0)
+intro.BackgroundTransparency = 1
+intro.TextColor3 = Color3.fromRGB(255, 255, 255)
+intro.Text = "Script Farm Chest by [Chiriku Roblox]"
+intro.TextScaled = true
+intro.Font = Enum.Font.GothamBold
+intro.TextXAlignment = Enum.TextXAlignment.Center
 
 -- Nút bật/tắt
 local toggle = Instance.new("TextButton", frame)
@@ -122,11 +81,6 @@ toggle.MouseButton1Click:Connect(function()
     getgenv().ChestFarm.Enabled = not getgenv().ChestFarm.Enabled
     toggle.Text = "Farm: " .. (getgenv().ChestFarm.Enabled and "ON" or "OFF")
     
-    if getgenv().ChestFarm.Enabled then
-        updateStatus("Đang farm chest...")
-    else
-        updateStatus("Đang chill...")
-    end
     -- Lưu trạng thái mỗi khi bật/tắt farm
     SaveState()
 end)
@@ -156,7 +110,7 @@ statusGui.Name = "StatusDisplay"
 
 local statusLabel = Instance.new("TextLabel", statusGui)
 statusLabel.Size = UDim2.new(0, 400, 0, 50)
-statusLabel.Position = UDim2.new(0.5, -200, 0.05, 0)
+statusLabel.Position = UDim2.new(0.5, -200, 0.15, 0)
 statusLabel.BackgroundTransparency = 1
 statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 statusLabel.Text = "Trạng thái: Đang chờ..."
@@ -177,7 +131,7 @@ function MoveTo(position)
     local hrp = char:WaitForChild("HumanoidRootPart")
 
     local distance = (hrp.Position - position).Magnitude
-    local speed = tonumber(flySpeed.Text) or 250
+    local speed = tonumber(speedBox.Text) or 250
     local time = distance / speed
 
     local tween = TweenService:Create(
@@ -206,6 +160,8 @@ spawn(function()
                 task.wait(getgenv().ChestFarm.DelayHop)
                 Hop()
             end
+        else
+            updateStatus("Đang chill...")
         end
     end
 end)
