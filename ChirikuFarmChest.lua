@@ -1,4 +1,8 @@
---===[ Farm Chest Gọn Nhẹ | Tác giả: Chiriku Roblox ]===--
+-- LocalScript (ClientSide) trong StarterPlayerScripts hoặc nơi khác
+
+local plr = game.Players.LocalPlayer
+local rs = game.ReplicatedStorage
+local FarmRemote = rs:WaitForChild("FarmRemote")  -- Đảm bảo rằng bạn đã tạo một RemoteEvent tên "FarmRemote" trong ReplicatedStorage
 
 getgenv().ChestFarm = {
     Enabled = false,
@@ -8,30 +12,21 @@ getgenv().ChestFarm = {
     Team = "Marines"
 }
 
-local JoinedAt = tick()
-local plr = game.Players.LocalPlayer
-local rs = game:GetService("ReplicatedStorage")
-local ws = game:GetService("Workspace")
-local ts = game:GetService("TweenService")
-local tp = game:GetService("TeleportService")
-local http = game:GetService("HttpService")
-
---===[ Lưu và Load trạng thái khi vào lại game ]===--
-local DataStore = game:GetService("DataStoreService"):GetDataStore("FarmChestDataStore")
-
--- Hàm để lưu trạng thái
+-- Cập nhật trạng thái
 local function SaveState()
-    pcall(function()
-        DataStore:SetAsync(plr.UserId .. "_FarmStatus", getgenv().ChestFarm.Enabled)
-        DataStore:SetAsync(plr.UserId .. "_FarmSpeed", getgenv().ChestFarm.Speed)
-    end)
+    local state = {
+        Enabled = getgenv().ChestFarm.Enabled,
+        Speed = getgenv().ChestFarm.Speed
+    }
+    
+    -- Gửi yêu cầu lưu trạng thái tới Server
+    FarmRemote:FireServer("Save", state)
 end
 
--- Hàm để tải trạng thái
 local function LoadState()
-    pcall(function()
-        local farmStatus = DataStore:GetAsync(plr.UserId .. "_FarmStatus")
-        local farmSpeed = DataStore:GetAsync(plr.UserId .. "_FarmSpeed")
+    -- Gửi yêu cầu tải trạng thái từ Server
+    FarmRemote:FireServer("Load", nil)
+    FarmRemote.OnClientEvent:Connect(function(farmStatus, farmSpeed)
         if farmStatus ~= nil then
             getgenv().ChestFarm.Enabled = farmStatus
         end
@@ -41,10 +36,15 @@ local function LoadState()
     end)
 end
 
--- Load trạng thái khi vào game
+-- Khi vào game, tải lại trạng thái
 LoadState()
 
---===[ Giới Thiệu Script Trên Màn Hình ]===--
+-- Lưu trạng thái khi thoát hoặc thay đổi
+game:BindToClose(function()
+    SaveState()
+end)
+
+-- Giới thiệu Script trên màn hình
 local infoGui = Instance.new("ScreenGui", game.CoreGui)
 infoGui.Name = "IntroGui"
 
@@ -88,24 +88,6 @@ task.spawn(function()
     infoGui:Destroy()
 end)
 
--- Anti AFK
-pcall(function()
-    local vu = game:GetService("VirtualUser")
-    plr.Idled:Connect(function()
-        vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-        task.wait(1)
-        vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-    end)
-end)
-
--- Auto Team
-coroutine.wrap(function()
-    repeat
-        rs.Remotes.CommF_:InvokeServer("SetTeam", getgenv().ChestFarm.Team)
-        task.wait(1)
-    until plr.Team
-end)()
-
 -- UI Gọn (có logo)
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "ChestUI"
@@ -145,7 +127,7 @@ toggle.MouseButton1Click:Connect(function()
     else
         updateStatus("Đang chill...")
     end
-    -- Save trạng thái mỗi khi bật/tắt farm
+    -- Lưu trạng thái mỗi khi bật/tắt farm
     SaveState()
 end)
 
@@ -168,16 +150,15 @@ speedBox.FocusLost:Connect(function()
     end
 end)
 
---===[ Thông báo trạng thái ở giữa màn hình (trong suốt, chữ trắng) ]===--
+-- Thông báo trạng thái
 local statusGui = Instance.new("ScreenGui", game.CoreGui)
 statusGui.Name = "StatusDisplay"
 
 local statusLabel = Instance.new("TextLabel", statusGui)
 statusLabel.Size = UDim2.new(0, 400, 0, 50)
 statusLabel.Position = UDim2.new(0.5, -200, 0.05, 0)
-statusLabel.BackgroundTransparency = 1 -- hoàn toàn trong suốt
-statusLabel.BackgroundColor3 = Color3.fromRGB(25, 25, 25) -- không còn dùng
-statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- trắng
+statusLabel.BackgroundTransparency = 1
+statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 statusLabel.Text = "Trạng thái: Đang chờ..."
 statusLabel.TextScaled = true
 statusLabel.Font = Enum.Font.GothamBold
@@ -187,7 +168,7 @@ local function updateStatus(text)
     statusLabel.Text = "Trạng thái: " .. text
 end
 
--- Fly Mượt mà theo đường thẳng
+-- Hàm bay mượt mà
 local TweenService = game:GetService("TweenService")
 
 function MoveTo(position)
@@ -214,7 +195,7 @@ spawn(function()
         if getgenv().ChestFarm.Enabled then
             local found = false
             updateStatus("Đang farm chest...")
-            for _,v in pairs(ws:GetDescendants()) do
+            for _,v in pairs(workspace:GetDescendants()) do
                 if v:IsA("Model") and v:FindFirstChildWhichIsA("TouchTransmitter", true) and v.Name:lower():find("chest") then
                     found = true
                     MoveTo(v:GetModelCFrame().Position + Vector3.new(0,3,0))
