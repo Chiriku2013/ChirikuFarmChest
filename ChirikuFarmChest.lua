@@ -1,148 +1,155 @@
-getgenv().Team = "Marines"  -- Đặt mặc định team là "Marines"
-getgenv().ChestFarmEnabled = true
+-- Script Farm Chest Pro (Skull Hub Style) | By ChatGPT
+if not game:IsLoaded() then game.Loaded:Wait() end
 
--- Giải quyết vấn đề bị AFK
+-- Anti AFK
 pcall(function()
-    local vu = game:GetService("VirtualUser")
-    game:GetService("Players").LocalPlayer.Idled:Connect(function()
+    local vu = game:service("VirtualUser")
+    game:service("Players").LocalPlayer.Idled:Connect(function()
         vu:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
         wait(1)
         vu:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
     end)
 end)
 
--- Tự động vào đội "Marines" khi chưa có team
-spawn(function()
-    repeat wait() until game:IsLoaded() and game.Players.LocalPlayer:FindFirstChild("PlayerGui")
-    repeat wait() until game:GetService("ReplicatedStorage"):FindFirstChild("Remotes")
-    wait(1)
-    if game.Players.LocalPlayer.Team == nil and getgenv().Team then
-        game:GetService("ReplicatedStorage").Remotes:FindFirstChild("ChooseTeam"):FireServer(getgenv().Team)
-    end
-end)
-
--- UI Giao diện Script
-local gui = Instance.new("ScreenGui", game.CoreGui)
-gui.Name = "ChestFarmUI"
-local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 200, 0, 100)
-frame.Position = UDim2.new(0, 20, 0.5, -50)
-frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-frame.BorderSizePixel = 0
-frame.Active = true
-frame.Draggable = true
-
-local title = Instance.new("TextLabel", frame)
-title.Text = "CHEST FARM SCRIPT"
-title.Size = UDim2.new(1, 0, 0, 30)
-title.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
-title.TextColor3 = Color3.fromRGB(255, 255, 0)
-title.TextSize = 14
-
-local onBtn = Instance.new("TextButton", frame)
-onBtn.Text = "BẬT"
-onBtn.Size = UDim2.new(0.5, 0, 0, 40)
-onBtn.Position = UDim2.new(0, 0, 0, 60)
-onBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
-onBtn.TextColor3 = Color3.fromRGB(255,255,255)
-onBtn.MouseButton1Click:Connect(function()
-    getgenv().ChestFarmEnabled = true
-end)
-
-local offBtn = Instance.new("TextButton", frame)
-offBtn.Text = "TẮT"
-offBtn.Size = UDim2.new(0.5, 0, 0, 40)
-offBtn.Position = UDim2.new(0.5, 0, 0, 60)
-offBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-offBtn.TextColor3 = Color3.fromRGB(255,255,255)
-offBtn.MouseButton1Click:Connect(function()
-    getgenv().ChestFarmEnabled = false
-end)
-
--- Hàm tạo ESP cho Chest
-function CreateESP(part)
-    if part:FindFirstChild("ChestESP") then return end
-    local bill = Instance.new("BillboardGui", part)
-    bill.Name = "ChestESP"
-    bill.Size = UDim2.new(0,100,0,40)
-    bill.AlwaysOnTop = true
-    bill.StudsOffset = Vector3.new(0,2,0)
-    local txt = Instance.new("TextLabel", bill)
-    txt.Size = UDim2.new(1,0,1,0)
-    txt.BackgroundTransparency = 1
-    txt.TextColor3 = Color3.new(1,1,0)
-    txt.TextScaled = true
-    spawn(function()
-        while bill and bill.Parent do
-            local dist = math.floor((part.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude)
-            txt.Text = "[RƯƠNG] - "..dist.."m"
-            wait(0.1)
-        end
-    end)
-end
-
--- Thông báo khi nhặt được Fist of Darkness hoặc God Chalice
-function NotifyItem(item)
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "ĐÃ NHẶT!",
-        Text = item,
-        Duration = 4
-    })
-end
-
--- Hàm bay đến vị trí chest
-function FlyTo(pos)
-    local hrp = game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart")
-    local ts = game:GetService("TweenService")
-    local dist = (hrp.Position - pos).Magnitude
-    local ti = TweenInfo.new(dist / 350, Enum.EasingStyle.Linear)
-    local tween = ts:Create(hrp, ti, {CFrame = CFrame.new(pos)})
-    tween:Play()
-    tween.Completed:Wait()
-end
-
--- Hàm nhảy server khi hết rương
-local function Hop()
-    local HttpService = game:GetService("HttpService")
-    local TeleportService = game:GetService("TeleportService")
-    local PlaceId = game.PlaceId
-    local JobId = game.JobId
-    local servers = {}
-    local req = (http_request or request or syn.request)
-    local res = req({Url = "https://games.roblox.com/v1/games/"..PlaceId.."/servers/Public?sortOrder=Asc&limit=100"})
-    local data = HttpService:JSONDecode(res.Body)
-    for i,v in pairs(data.data) do
-        if v.playing < v.maxPlayers and v.id ~= JobId then
-            table.insert(servers, v.id)
+-- Auto Join Team
+getgenv().Team = "Marines"
+repeat wait()
+    for _,v in pairs(game:GetService("Players").LocalPlayer.PlayerGui:GetChildren()) do
+        if v.Name == "Team" then
+            if getgenv().Team == "Pirates" then
+                v:WaitForChild("Frame"):WaitForChild("Pirates").MouseButton1Click:Fire()
+            else
+                v:WaitForChild("Frame"):WaitForChild("Marines").MouseButton1Click:Fire()
+            end
         end
     end
-    if #servers > 0 then
-        TeleportService:TeleportToPlaceInstance(PlaceId, servers[math.random(1,#servers)], game.Players.LocalPlayer)
+until game.Players.LocalPlayer.Team ~= nil
+
+-- UI Setup
+local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Orion/main/source"))()
+local Window = OrionLib:MakeWindow({
+    Name = "Chest Farm | Skull Style",
+    HidePremium = false,
+    SaveConfig = true,
+    IntroEnabled = true,
+    IntroText = "Script by Chiriku Roblox"
+})
+
+-- Variables
+local ChestFarm = false
+local FlySpeed = 350
+local FastAttack = true
+
+-- Chest ESP
+function ESPChest()
+    for _,v in pairs(workspace:GetDescendants()) do
+        if v:IsA("Model") and v:FindFirstChild("TouchInterest") and v:FindFirstChild("HumanoidRootPart") and v.Name:lower():find("chest") and not v:FindFirstChild("ESP") then
+            local bill = Instance.new("BillboardGui", v)
+            bill.Name = "ESP"
+            bill.Size = UDim2.new(0,100,0,40)
+            bill.AlwaysOnTop = true
+            bill.Adornee = v.HumanoidRootPart
+
+            local txt = Instance.new("TextLabel", bill)
+            txt.Size = UDim2.new(1,0,1,0)
+            txt.Text = "[Chest] | "..math.floor((game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v.HumanoidRootPart.Position).Magnitude).."m"
+            txt.TextColor3 = Color3.new(1,1,0)
+            txt.BackgroundTransparency = 1
+            txt.TextScaled = true
+        end
     end
 end
 
--- Chính script farm chest và auto hop server
-spawn(function()
-    while wait(1) do
-        if getgenv().ChestFarmEnabled and game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            local foundChest = false
-            for _,v in pairs(workspace:GetDescendants()) do
-                if v:IsA("Model") and v:FindFirstChild("HumanoidRootPart") and string.lower(v.Name):find("chest") then
-                    foundChest = true
-                    CreateESP(v.HumanoidRootPart)
-                    FlyTo(v.HumanoidRootPart.Position + Vector3.new(0,3,0))
-                    if v.Name == "Fist of Darkness" then
-                        NotifyItem("Fist of Darkness (Sea 2)")
-                    elseif v.Name == "God Chalice" then
-                        NotifyItem("God Chalice (Sea 3)")
-                    end
-                    wait(1)
+-- Fast Attack (Simple)
+function DoFastAttack()
+    if FastAttack then
+        local VirtualInputManager = game:GetService("VirtualInputManager")
+        VirtualInputManager:SendKeyEvent(true, "Z", false, game)
+        wait(0.1)
+        VirtualInputManager:SendKeyEvent(false, "Z", false, game)
+    end
+end
+
+-- Chest Farm Loop
+function FarmChest()
+    while ChestFarm do wait()
+        ESPChest()
+        local nearest = nil
+        local shortest = math.huge
+        for _,v in pairs(workspace:GetDescendants()) do
+            if v:IsA("Model") and v:FindFirstChild("TouchInterest") and v:FindFirstChild("HumanoidRootPart") and v.Name:lower():find("chest") then
+                local mag = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v.HumanoidRootPart.Position).Magnitude
+                if mag < shortest then
+                    shortest = mag
+                    nearest = v
                 end
             end
-            if not foundChest then
-                wait(3)
-                Hop()
+        end
+        if nearest then
+            repeat wait()
+                pcall(function()
+                    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = nearest.HumanoidRootPart.CFrame + Vector3.new(0,3,0)
+                end)
+            until not nearest.Parent or (nearest:FindFirstChild("TouchInterest") == nil) or not ChestFarm
+        else
+            -- Auto Hop Server
+            local Http = game:GetService("HttpService")
+            local TeleportService = game:GetService("TeleportService")
+            local Servers = Http:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/2753915549/servers/Public?sortOrder=Asc&limit=100"))
+            for _,v in pairs(Servers.data) do
+                if v.playing < v.maxPlayers and v.id ~= game.JobId then
+                    TeleportService:TeleportToPlaceInstance(game.PlaceId, v.id)
+                    break
+                end
             end
         end
     end
+end
+
+-- Notify When Found FOD or Chalice
+workspace.DescendantAdded:Connect(function(obj)
+    if obj.Name == "Fist of Darkness" or obj.Name == "God's Chalice" then
+        OrionLib:MakeNotification({
+            Name = "Hiếm!",
+            Content = obj.Name.." đã xuất hiện!",
+            Image = "rbxassetid://6031075938",
+            Time = 8
+        })
+    end
 end)
+
+-- Tabs & Toggles
+local Tab = Window:MakeTab({Name = "Farm", Icon = "rbxassetid://6031225922", PremiumOnly = false})
+
+Tab:AddToggle({
+    Name = "Bật Farm Chest",
+    Default = false,
+    Callback = function(Value)
+        ChestFarm = Value
+        if Value then
+            FarmChest()
+        end
+    end
+})
+
+Tab:AddSlider({
+    Name = "Tốc độ bay",
+    Min = 100,
+    Max = 600,
+    Default = 350,
+    Increment = 10,
+    ValueName = "Speed",
+    Callback = function(Value)
+        FlySpeed = Value
+    end    
+})
+
+Tab:AddToggle({
+    Name = "Fast Attack (Z)",
+    Default = true,
+    Callback = function(Value)
+        FastAttack = Value
+    end
+})
+
+OrionLib:Init()
