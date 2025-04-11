@@ -1,10 +1,6 @@
---// Cài đặt Team: "Pirates" hoặc "Marines"
-getgenv().Team = "Marines"
-
---// Bật / Tắt farm
+getgenv().Team = "Marines" -- Hoặc "Marines"
 getgenv().ChestFarmEnabled = true
 
---// Anti-AFK
 pcall(function()
     local vu = game:GetService("VirtualUser")
     game:GetService("Players").LocalPlayer.Idled:Connect(function()
@@ -14,7 +10,15 @@ pcall(function()
     end)
 end)
 
---// UI
+spawn(function()
+    repeat wait() until game:IsLoaded() and game.Players.LocalPlayer:FindFirstChild("PlayerGui")
+    repeat wait() until game:GetService("ReplicatedStorage"):FindFirstChild("Remotes")
+    wait(1)
+    if game.Players.LocalPlayer.Team == nil and getgenv().Team then
+        game:GetService("ReplicatedStorage").Remotes:FindFirstChild("ChooseTeam"):FireServer(getgenv().Team)
+    end
+end)
+
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "ChestFarmUI"
 local frame = Instance.new("Frame", gui)
@@ -52,33 +56,19 @@ offBtn.MouseButton1Click:Connect(function()
     getgenv().ChestFarmEnabled = false
 end)
 
---// Auto vào Team
 spawn(function()
-    while wait(1) do
-        if game.Players.LocalPlayer.Team == nil and getgenv().Team then
-            local args = {[1] = getgenv().Team}
-            game:GetService("ReplicatedStorage").Remotes:FindFirstChild("ChooseTeam"):FireServer(unpack(args))
+    while wait(0.1) do
+        if getgenv().ChestFarmEnabled then
+            local char = game.Players.LocalPlayer.Character
+            local tool = char and char:FindFirstChildOfClass("Tool")
+            if tool then
+                game:GetService("VirtualInputManager"):SendMouseButtonEvent(0,0,0,true,game,0)
+                game:GetService("VirtualInputManager"):SendMouseButtonEvent(0,0,0,false,game,0)
+            end
         end
     end
 end)
 
---// Fast Attack + Auto Click
-spawn(function()
-    pcall(function()
-        while wait(0.1) do
-            if getgenv().ChestFarmEnabled then
-                local char = game.Players.LocalPlayer.Character
-                local tool = char and char:FindFirstChildOfClass("Tool")
-                if tool then
-                    game:GetService("VirtualInputManager"):SendMouseButtonEvent(0,0,0,true,game,0)
-                    game:GetService("VirtualInputManager"):SendMouseButtonEvent(0,0,0,false,game,0)
-                end
-            end
-        end
-    end)
-end)
-
---// ESP Chest
 function CreateESP(part)
     if part:FindFirstChild("ChestESP") then return end
     local bill = Instance.new("BillboardGui", part)
@@ -100,7 +90,6 @@ function CreateESP(part)
     end)
 end
 
---// Thông báo khi nhặt item hiếm
 function NotifyItem(item)
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "ĐÃ NHẶT!",
@@ -109,7 +98,16 @@ function NotifyItem(item)
     })
 end
 
---// Auto Hop Server
+function FlyTo(pos)
+    local hrp = game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart")
+    local ts = game:GetService("TweenService")
+    local dist = (hrp.Position - pos).Magnitude
+    local ti = TweenInfo.new(dist / 350, Enum.EasingStyle.Linear)
+    local tween = ts:Create(hrp, ti, {CFrame = CFrame.new(pos)})
+    tween:Play()
+    tween.Completed:Wait()
+end
+
 local function Hop()
     local HttpService = game:GetService("HttpService")
     local TeleportService = game:GetService("TeleportService")
@@ -129,24 +127,13 @@ local function Hop()
     end
 end
 
---// Bay mượt đến rương (tốc độ 350)
-function FlyTo(pos)
-    local hrp = game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart")
-    local TweenService = game:GetService("TweenService")
-    local distance = (hrp.Position - pos).Magnitude
-    local tween = TweenService:Create(hrp, TweenInfo.new(distance / 350, Enum.EasingStyle.Linear), {CFrame = CFrame.new(pos)})
-    tween:Play()
-    tween.Completed:Wait()
-end
-
---// Farm Chest
 spawn(function()
     while wait(1) do
-        if getgenv().ChestFarmEnabled then
-            local found = false
+        if getgenv().ChestFarmEnabled and game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local foundChest = false
             for _,v in pairs(workspace:GetDescendants()) do
                 if v:IsA("Model") and v:FindFirstChild("HumanoidRootPart") and string.lower(v.Name):find("chest") then
-                    found = true
+                    foundChest = true
                     CreateESP(v.HumanoidRootPart)
                     FlyTo(v.HumanoidRootPart.Position + Vector3.new(0,3,0))
                     if v.Name == "Fist of Darkness" then
@@ -154,11 +141,11 @@ spawn(function()
                     elseif v.Name == "God Chalice" then
                         NotifyItem("God Chalice (Sea 3)")
                     end
-                    break
+                    wait(1)
                 end
             end
-            if not found then
-                wait(2)
+            if not foundChest then
+                wait(3)
                 Hop()
             end
         end
