@@ -1,6 +1,7 @@
-getgenv().Team = "Marines" -- Hoặc "Marines"
+getgenv().Team = "Marines"  -- Đặt mặc định team là "Marines"
 getgenv().ChestFarmEnabled = true
 
+-- Giải quyết vấn đề bị AFK
 pcall(function()
     local vu = game:GetService("VirtualUser")
     game:GetService("Players").LocalPlayer.Idled:Connect(function()
@@ -10,6 +11,7 @@ pcall(function()
     end)
 end)
 
+-- Tự động vào đội "Marines" khi chưa có team
 spawn(function()
     repeat wait() until game:IsLoaded() and game.Players.LocalPlayer:FindFirstChild("PlayerGui")
     repeat wait() until game:GetService("ReplicatedStorage"):FindFirstChild("Remotes")
@@ -19,6 +21,7 @@ spawn(function()
     end
 end)
 
+-- UI Giao diện Script
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "ChestFarmUI"
 local frame = Instance.new("Frame", gui)
@@ -56,19 +59,7 @@ offBtn.MouseButton1Click:Connect(function()
     getgenv().ChestFarmEnabled = false
 end)
 
-spawn(function()
-    while wait(0.1) do
-        if getgenv().ChestFarmEnabled then
-            local char = game.Players.LocalPlayer.Character
-            local tool = char and char:FindFirstChildOfClass("Tool")
-            if tool then
-                game:GetService("VirtualInputManager"):SendMouseButtonEvent(0,0,0,true,game,0)
-                game:GetService("VirtualInputManager"):SendMouseButtonEvent(0,0,0,false,game,0)
-            end
-        end
-    end
-end)
-
+-- Hàm tạo ESP cho Chest
 function CreateESP(part)
     if part:FindFirstChild("ChestESP") then return end
     local bill = Instance.new("BillboardGui", part)
@@ -90,6 +81,7 @@ function CreateESP(part)
     end)
 end
 
+-- Thông báo khi nhặt được Fist of Darkness hoặc God Chalice
 function NotifyItem(item)
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "ĐÃ NHẶT!",
@@ -98,6 +90,7 @@ function NotifyItem(item)
     })
 end
 
+-- Hàm bay đến vị trí chest
 function FlyTo(pos)
     local hrp = game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart")
     local ts = game:GetService("TweenService")
@@ -108,6 +101,7 @@ function FlyTo(pos)
     tween.Completed:Wait()
 end
 
+-- Hàm nhảy server khi hết rương
 local function Hop()
     local HttpService = game:GetService("HttpService")
     local TeleportService = game:GetService("TeleportService")
@@ -127,6 +121,7 @@ local function Hop()
     end
 end
 
+-- Chính script farm chest và auto hop server
 spawn(function()
     while wait(1) do
         if getgenv().ChestFarmEnabled and game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
