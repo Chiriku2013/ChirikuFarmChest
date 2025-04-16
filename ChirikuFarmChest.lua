@@ -1,13 +1,7 @@
 --==[ Chest Farm Script | Smart Server Hop | By Chiriku Roblox ]==--
 repeat wait() until game:IsLoaded()
 
--- SETTINGS
-getgenv().Team = "Marines"
-getgenv().Speed = 350
-getgenv().Enabled = getgenv().Enabled or false
-getgenv().TotalMoney = getgenv().TotalMoney or 0
-
--- NOTIFY GIỚI THIỆU
+-- NOTIFY KHI MỚI EXECUTE
 pcall(function()
     game.StarterGui:SetCore("SendNotification", {
         Title = "Chest Farm | By Chiriku Roblox",
@@ -15,6 +9,13 @@ pcall(function()
         Duration = 5
     })
 end)
+wait(2)
+
+-- SETTINGS
+getgenv().Team = "Marines"
+getgenv().Speed = 350
+getgenv().Enabled = getgenv().Enabled or false
+getgenv().TotalMoney = getgenv().TotalMoney or 0
 
 -- ANTI AFK
 spawn(function()
@@ -67,7 +68,7 @@ toggle.MouseButton1Click:Connect(function()
     toggle.Text = getgenv().Enabled and "Chest Farm: ON" or "Chest Farm: OFF"
 end)
 
--- SAVE SETTINGS ON TELEPORT
+-- SAVE STATE ON TELEPORT
 queue_on_teleport([[
     getgenv().Team = "]]..getgenv().Team..[["
     getgenv().Speed = ]]..getgenv().Speed..[[
@@ -76,46 +77,44 @@ queue_on_teleport([[
     loadstring(game:HttpGet("https://raw.githubusercontent.com/Chiriku2013/ChirikuFarmChest/refs/heads/main/ChirikuFarmChest.lua"))()
 ]])
 
--- ISLAND LOCATIONS (SEA 1/2/3)
+-- SERVER HOP
+function ServerHop()
+    local Http = game:GetService("HttpService")
+    local TeleportService = game:GetService("TeleportService")
+    local PlaceID = game.PlaceId
+    local Servers = {}
+    local req = game:HttpGet("https://games.roblox.com/v1/games/"..PlaceID.."/servers/Public?sortOrder=2&limit=100")
+    for _,v in pairs(Http:JSONDecode(req).data) do
+        if v.playing < v.maxPlayers and v.id ~= game.JobId then
+            table.insert(Servers, v.id)
+        end
+    end
+    if #Servers > 0 then
+        TeleportService:TeleportToPlaceInstance(PlaceID, Servers[math.random(1, #Servers)], game.Players.LocalPlayer)
+    else
+        TeleportService:Teleport(PlaceID)
+    end
+end
+
+-- TỌA ĐỘ ĐẢO
 local SeaIslands = {
     [1] = {
-        Vector3.new(104, 16, 1573),     -- Starter Island
-        Vector3.new(1064, 16, 1407),    -- Jungle
-        Vector3.new(-1203, 4, 391),     -- Pirate Village
-        Vector3.new(1143, 4, -4322),    -- Desert
-        Vector3.new(-655, 7, 1430),     -- Middle Island
-        Vector3.new(-1601, 17, -2755),  -- Frozen Village
-        Vector3.new(-3834, 6, -2885),   -- Marine Fortress
-        Vector3.new(3657, 38, -3215),   -- Skylands
-        Vector3.new(4874, 5, -2623),    -- Prison
-        Vector3.new(-5403, 10, -2660),  -- Colosseum
-        Vector3.new(-5246, 7, -2272),   -- Magma Village
-        Vector3.new(6073, 39, -3900),   -- Underwater City
-        Vector3.new(5133, 4, 4054),     -- Fountain City
+        Vector3.new(104, 16, 1573), Vector3.new(1064, 16, 1407), Vector3.new(-1203, 4, 391),
+        Vector3.new(1143, 4, -4322), Vector3.new(-655, 7, 1430), Vector3.new(-1601, 17, -2755),
+        Vector3.new(-3834, 6, -2885), Vector3.new(3657, 38, -3215), Vector3.new(4874, 5, -2623),
+        Vector3.new(-5403, 10, -2660), Vector3.new(-5246, 7, -2272), Vector3.new(6073, 39, -3900),
+        Vector3.new(5133, 4, 4054)
     },
     [2] = {
-        Vector3.new(-393, 73, 258),     -- Kingdom of Rose
-        Vector3.new(-469, 73, 603),     -- Usoap's Island
-        Vector3.new(17, 74, 295),       -- Cafe
-        Vector3.new(228, 8, 915),       -- Don Swan's Mansion
-        Vector3.new(-1036, 198, -1050), -- Green Zone
-        Vector3.new(-5345, 8, -712),    -- Graveyard
-        Vector3.new(5443, 602, 752),    -- Snow Mountain
-        Vector3.new(2174, 39, 909),     -- Hot and Cold
-        Vector3.new(-6330, 16, -1247),  -- Cursed Ship
-        Vector3.new(5400, 80, -640),    -- Ice Castle
-        Vector3.new(-6105, 16, -5047),  -- Forgotten Island
-        Vector3.new(5981, 5, -2317),    -- Dark Arena
+        Vector3.new(-393, 73, 258), Vector3.new(-469, 73, 603), Vector3.new(17, 74, 295),
+        Vector3.new(228, 8, 915), Vector3.new(-1036, 198, -1050), Vector3.new(-5345, 8, -712),
+        Vector3.new(5443, 602, 752), Vector3.new(2174, 39, 909), Vector3.new(-6330, 16, -1247),
+        Vector3.new(5400, 80, -640), Vector3.new(-6105, 16, -5047), Vector3.new(5981, 5, -2317)
     },
     [3] = {
-        Vector3.new(-262, 20, 5301),    -- Port Town
-        Vector3.new(-2850, 20, 5340),   -- Hydra Island
-        Vector3.new(-12498, 332, 7879), -- Castle on the Sea
-        Vector3.new(-9500, 20, -900),   -- Floating Turtle
-        Vector3.new(6044, 20, -134),    -- Great Tree
-        Vector3.new(2575, 7, 850),      -- Haunted Castle
-        Vector3.new(-6100, 16, -2400),  -- Sea of Treats
-        Vector3.new(1575, 16, -1333),   -- Tiki Outpost
+        Vector3.new(-262, 20, 5301), Vector3.new(-2850, 20, 5340), Vector3.new(-12498, 332, 7879),
+        Vector3.new(-9500, 20, -900), Vector3.new(6044, 20, -134), Vector3.new(2575, 7, 850),
+        Vector3.new(-6100, 16, -2400), Vector3.new(1575, 16, -1333)
     }
 }
 
@@ -145,7 +144,7 @@ function GetAllChests()
     return chests
 end
 
--- BAY
+-- TWEEN BAY
 function TweenTo(pos)
     local TweenService = game:GetService("TweenService")
     local hrp = game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart")
@@ -158,40 +157,7 @@ function TweenTo(pos)
     tween.Completed:Wait()
 end
 
--- SMART SERVER HOP
-function SmartHop()
-    local chests = GetAllChests()
-    if #chests == 0 then
-        local currentSea = GetCurrentSea()
-        local islands = SeaIslands[currentSea]
-
-        -- Kiểm tra đảo đã hết chest và nhảy sang server khác
-        local function CheckIslandsAndHop()
-            for _, island in ipairs(islands) do
-                TweenTo(island)
-                wait(2)  -- Đợi 2s để kiểm tra
-                if #GetAllChests() > 0 then
-                    return true
-                end
-            end
-            return false
-        end
-        
-        -- Thực hiện nhảy server
-        if not CheckIslandsAndHop() then
-            -- Smart hop tới server khác nếu không còn chest
-            local oldServerID = game:GetService("SocialService"):GetOnlinePlayerCount()
-            local success, err = pcall(function()
-                game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, game.JobId)
-            end)
-            if not success then
-                print("Error when hopping server: " .. err)
-            end
-        end
-    end
-end
-
--- FARM
+-- FARM LOOP
 spawn(function()
     while wait(1) do
         if getgenv().Enabled then
@@ -200,7 +166,7 @@ spawn(function()
             for _,island in pairs(SeaIslands[sea]) do
                 if not getgenv().Enabled then break end
                 TweenTo(island)
-                wait(2)
+                wait(1)
                 local chests = GetAllChests()
                 table.sort(chests, function(a,b)
                     return (a.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <
@@ -208,3 +174,28 @@ spawn(function()
                 end)
                 for _,chest in pairs(chests) do
                     if not getgenv().Enabled then break end
+                    local oldBeli = game.Players.LocalPlayer.Data.Beli.Value
+                    TweenTo(chest.Position)
+                    wait(0.2)
+                    local newBeli = game.Players.LocalPlayer.Data.Beli.Value
+                    local earned = newBeli - oldBeli
+                    if earned > 0 then
+                        getgenv().TotalMoney += earned
+                        moneyLabel.Text = "Beli nhặt được: " .. tostring(getgenv().TotalMoney)
+                        pcall(function()
+                            game.StarterGui:SetCore("SendNotification", {
+                                Title = "Đã nhặt rương!",
+                                Text = "+ " .. tostring(earned) .. " Beli",
+                                Duration = 2
+                            })
+                        end)
+                        found = true
+                    end
+                end
+            end
+            if not found then
+                ServerHop()
+            end
+        end
+    end
+end)
