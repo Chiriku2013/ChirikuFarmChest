@@ -1,4 +1,5 @@
---==[ Chest Farm Script | Smart Server Hop | By Chiriku Roblox ]==--
+--==[ Chest Farm | No Dup Server | Anti Water | Tween Smooth | By Chiriku Roblox ]==--
+
 repeat wait() until game:IsLoaded()
 
 -- SETTINGS
@@ -6,30 +7,31 @@ getgenv().Team = "Marines"
 getgenv().Speed = 350
 getgenv().Enabled = getgenv().Enabled or false
 getgenv().TotalMoney = getgenv().TotalMoney or 0
+getgenv().JoinedServers = getgenv().JoinedServers or {}
 
--- NOTIFY GIỚI THIỆU
+-- Notify Start
 pcall(function()
     game.StarterGui:SetCore("SendNotification", {
         Title = "Chest Farm | By Chiriku Roblox",
-        Text = "Đang tải... Chờ 2s để bắt đầu farm chest!",
+        Text = "Script đang chạy! Chờ 2s để bắt đầu farm chest.",
         Duration = 5
     })
 end)
 
--- ANTI AFK
+-- Anti AFK
 spawn(function()
     local vu = game:GetService("VirtualUser")
     game.Players.LocalPlayer.Idled:Connect(function()
-        vu:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+        vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
         wait(1)
-        vu:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+        vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
     end)
 end)
 
--- AUTO TEAM
+-- Auto Team
 spawn(function()
     while not game.Players.LocalPlayer.Team or game.Players.LocalPlayer.Team.Name ~= getgenv().Team do
-        for _,v in pairs(game:GetService("Teams"):GetChildren()) do
+        for i,v in pairs(game:GetService("Teams"):GetChildren()) do
             if v.Name == getgenv().Team then
                 game:GetService("ReplicatedStorage").Remotes["CommF_"]:InvokeServer("SetTeam", getgenv().Team)
             end
@@ -38,7 +40,7 @@ spawn(function()
     end
 end)
 
--- UI
+-- UI Toggle
 if game.CoreGui:FindFirstChild("ChestFarmUI") then game.CoreGui.ChestFarmUI:Destroy() end
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "ChestFarmUI"
@@ -67,29 +69,29 @@ toggle.MouseButton1Click:Connect(function()
     toggle.Text = getgenv().Enabled and "Chest Farm: ON" or "Chest Farm: OFF"
 end)
 
--- SAVE SETTINGS ON TELEPORT
+-- queue_on_teleport
 queue_on_teleport([[
     getgenv().Team = "]]..getgenv().Team..[["
     getgenv().Speed = ]]..getgenv().Speed..[[
     getgenv().TotalMoney = ]]..getgenv().TotalMoney..[[
     getgenv().Enabled = true
+    getgenv().JoinedServers = getgenv().JoinedServers or {}
     loadstring(game:HttpGet("https://raw.githubusercontent.com/Chiriku2013/ChirikuFarmChest/refs/heads/main/ChirikuFarmChest.lua"))()
 ]])
 
--- TWEEN MƯỢT
-function TweenTo(pos)
-    local TweenService = game:GetService("TweenService")
-    local hrp = game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart")
-    local distance = (hrp.Position - pos).Magnitude
-    local tweenTime = distance / getgenv().Speed
-    local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear)
-    local tweenGoal = {CFrame = CFrame.new(pos + Vector3.new(0, 5, 0))}
-    local tween = TweenService:Create(hrp, tweenInfo, tweenGoal)
-    tween:Play()
-    tween.Completed:Wait()
-end
+-- Anti Water
+spawn(function()
+    while wait(1) do
+        if getgenv().Enabled then
+            local root = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if root and root.Position.Y < -10 then
+                root.CFrame = CFrame.new(root.Position.X, 150, root.Position.Z)
+            end
+        end
+    end
+end)
 
--- LẤY CHEST TOÀN BẢN ĐỒ
+-- Get Chests
 function GetAllChests()
     local chests = {}
     for _,v in pairs(workspace:GetDescendants()) do
@@ -103,23 +105,55 @@ function GetAllChests()
     return chests
 end
 
--- FARM CHEST
+-- Tween To Chest (smooth no jitter)
+function TweenTo(pos)
+    local ts = game:GetService("TweenService")
+    local hrp = game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart")
+    local dist = (hrp.Position - pos).Magnitude
+    local time = dist / getgenv().Speed
+    local info = TweenInfo.new(time, Enum.EasingStyle.Linear)
+    local goal = {CFrame = CFrame.new(pos + Vector3.new(0, 5, 0))}
+    local tween = ts:Create(hrp, info, goal)
+    tween:Play()
+    tween.Completed:Wait()
+end
+
+-- Get Server ID
+function GetServerId()
+    return tostring(game.JobId)
+end
+
+-- Smart Hop
+function SmartHop()
+    local HttpService = game:GetService("HttpService")
+    local TeleportService = game:GetService("TeleportService")
+    local Servers = game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100")
+    local ServerList = HttpService:JSONDecode(Servers)
+
+    for _, server in pairs(ServerList.data) do
+        if server.playing < server.maxPlayers and server.id ~= game.JobId and not table.find(getgenv().JoinedServers, server.id) then
+            table.insert(getgenv().JoinedServers, server.id)
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, server.id)
+            break
+        end
+    end
+end
+
+-- Farm Loop
 spawn(function()
-    wait(2)
-    while task.wait(1) do
+    while wait(1) do
         if getgenv().Enabled then
+            local found = false
             local chests = GetAllChests()
             table.sort(chests, function(a, b)
                 return (a.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <
                        (b.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
             end)
-
-            local found = false
-            for _, chest in ipairs(chests) do
+            for _, chest in pairs(chests) do
                 if not getgenv().Enabled then break end
                 local oldBeli = game.Players.LocalPlayer.Data.Beli.Value
                 TweenTo(chest.Position)
-                task.wait(0.2)
+                wait(0.2)
                 local newBeli = game.Players.LocalPlayer.Data.Beli.Value
                 local earned = newBeli - oldBeli
                 if earned > 0 then
@@ -127,17 +161,16 @@ spawn(function()
                     moneyLabel.Text = "Beli nhặt được: " .. tostring(getgenv().TotalMoney)
                     pcall(function()
                         game.StarterGui:SetCore("SendNotification", {
-                            Title = "Nhặt được Beli!",
-                            Text = "+ " .. tostring(earned),
-                            Duration = 2
+                            Title = "Nhặt được rương!",
+                            Text = "+"..tostring(earned).." Beli",
+                            Duration = 3
                         })
                     end)
                     found = true
                 end
             end
-
             if not found then
-                game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, game.JobId)
+                SmartHop()
             end
         end
     end
