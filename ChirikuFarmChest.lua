@@ -24,7 +24,7 @@ getgenv().Team = "]]..getgenv().Team..[["
 getgenv().Speed = ]]..getgenv().Speed..[[ 
 getgenv().TotalMoney = ]]..getgenv().TotalMoney..[[ 
 getgenv().Enabled = true
-loadstring(game:HttpGet("https://pastebin.com/raw/xxxxxxxx"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Chiriku2013/ChirikuFarmChest/refs/heads/main/ChirikuFarmChest.lua"))()
 ]]
 queue_on_teleport(ScriptSource)
 
