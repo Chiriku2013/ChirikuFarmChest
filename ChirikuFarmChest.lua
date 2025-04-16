@@ -1,4 +1,4 @@
---==[ Chest Farm | No Dup Server | Anti Water | Tween Smooth | By Chiriku Roblox ]==--
+--==[ Chest Farm | Smart Delay | No Dup Server | Anti Water | Tween Smooth | By Chiriku Roblox ]==--
 
 repeat wait() until game:IsLoaded()
 
@@ -13,8 +13,8 @@ getgenv().JoinedServers = getgenv().JoinedServers or {}
 pcall(function()
     game.StarterGui:SetCore("SendNotification", {
         Title = "Chest Farm | By Chiriku Roblox",
-        Text = "Script đang chạy! Chờ 2s để bắt đầu farm chest.",
-        Duration = 5
+        Text = "Đang quét chest... Đợi 10 giây để bắt đầu.",
+        Duration = 8
     })
 end)
 
@@ -105,7 +105,7 @@ function GetAllChests()
     return chests
 end
 
--- Tween To Chest (smooth no jitter)
+-- Tween To Chest
 function TweenTo(pos)
     local ts = game:GetService("TweenService")
     local hrp = game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart")
@@ -116,11 +116,6 @@ function TweenTo(pos)
     local tween = ts:Create(hrp, info, goal)
     tween:Play()
     tween.Completed:Wait()
-end
-
--- Get Server ID
-function GetServerId()
-    return tostring(game.JobId)
 end
 
 -- Smart Hop
@@ -139,8 +134,9 @@ function SmartHop()
     end
 end
 
--- Farm Loop
+-- Farm Loop with Delay
 spawn(function()
+    wait(10) -- chờ quét chest toàn map
     while wait(1) do
         if getgenv().Enabled then
             local found = false
