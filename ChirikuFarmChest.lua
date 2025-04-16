@@ -158,6 +158,39 @@ function TweenTo(pos)
     tween.Completed:Wait()
 end
 
+-- SMART SERVER HOP
+function SmartHop()
+    local chests = GetAllChests()
+    if #chests == 0 then
+        local currentSea = GetCurrentSea()
+        local islands = SeaIslands[currentSea]
+
+        -- Kiểm tra đảo đã hết chest và nhảy sang server khác
+        local function CheckIslandsAndHop()
+            for _, island in ipairs(islands) do
+                TweenTo(island)
+                wait(2)  -- Đợi 2s để kiểm tra
+                if #GetAllChests() > 0 then
+                    return true
+                end
+            end
+            return false
+        end
+        
+        -- Thực hiện nhảy server
+        if not CheckIslandsAndHop() then
+            -- Smart hop tới server khác nếu không còn chest
+            local oldServerID = game:GetService("SocialService"):GetOnlinePlayerCount()
+            local success, err = pcall(function()
+                game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, game.JobId)
+            end)
+            if not success then
+                print("Error when hopping server: " .. err)
+            end
+        end
+    end
+end
+
 -- FARM
 spawn(function()
     while wait(1) do
@@ -175,21 +208,3 @@ spawn(function()
                 end)
                 for _,chest in pairs(chests) do
                     if not getgenv().Enabled then break end
-                    local oldBeli = game.Players.LocalPlayer.Data.Beli.Value
-                    TweenTo(chest.Position)
-                    wait(0.2)
-                    local newBeli = game.Players.LocalPlayer.Data.Beli.Value
-                    local earned = newBeli - oldBeli
-                    if earned > 0 then
-                        getgenv().TotalMoney += earned
-                        moneyLabel.Text = "Beli nhặt được: " .. tostring(getgenv().TotalMoney)
-                        found = true
-                    end
-                end
-            end
-            if not found then
-                game:GetService("TeleportService"):Teleport(game.PlaceId)
-            end
-        end
-    end
-end)
