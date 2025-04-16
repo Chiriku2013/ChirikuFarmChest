@@ -1,7 +1,13 @@
 --==[ Chest Farm Script | Smart Server Hop | By Chiriku Roblox ]==--
 repeat wait() until game:IsLoaded()
 
--- NOTIFY KHI MỚI EXECUTE
+-- SETTINGS
+getgenv().Team = "Marines"
+getgenv().Speed = 350
+getgenv().Enabled = getgenv().Enabled or false
+getgenv().TotalMoney = getgenv().TotalMoney or 0
+
+-- NOTIFY GIỚI THIỆU
 pcall(function()
     game.StarterGui:SetCore("SendNotification", {
         Title = "Chest Farm | By Chiriku Roblox",
@@ -9,13 +15,6 @@ pcall(function()
         Duration = 5
     })
 end)
-wait(2)
-
--- SETTINGS
-getgenv().Team = "Marines"
-getgenv().Speed = 350
-getgenv().Enabled = getgenv().Enabled or false
-getgenv().TotalMoney = getgenv().TotalMoney or 0
 
 -- ANTI AFK
 spawn(function()
@@ -68,53 +67,31 @@ toggle.MouseButton1Click:Connect(function()
     toggle.Text = getgenv().Enabled and "Chest Farm: ON" or "Chest Farm: OFF"
 end)
 
--- SAVE STATE ON TELEPORT
-queue_on_teleport([[
-    getgenv().Team = "]]..getgenv().Team..[["
-    getgenv().Speed = ]]..getgenv().Speed..[[
-    getgenv().TotalMoney = ]]..getgenv().TotalMoney..[[
-    getgenv().Enabled = true
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/Chiriku2013/ChirikuFarmChest/refs/heads/main/ChirikuFarmChest.lua"))()
+-- SAVE SETTINGS ON TELEPORT
+queue_on_teleport([[ 
+    getgenv().Team = "]]..getgenv().Team..[[" 
+    getgenv().Speed = ]]..getgenv().Speed..[[ 
+    getgenv().TotalMoney = ]]..getgenv().TotalMoney..[[ 
+    getgenv().Enabled = true 
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/Chiriku2013/ChirikuFarmChest/refs/heads/main/ChirikuFarmChest.lua"))() 
 ]])
 
--- SERVER HOP
-function ServerHop()
-    local Http = game:GetService("HttpService")
-    local TeleportService = game:GetService("TeleportService")
-    local PlaceID = game.PlaceId
-    local Servers = {}
-    local req = game:HttpGet("https://games.roblox.com/v1/games/"..PlaceID.."/servers/Public?sortOrder=2&limit=100")
-    for _,v in pairs(Http:JSONDecode(req).data) do
-        if v.playing < v.maxPlayers and v.id ~= game.JobId then
-            table.insert(Servers, v.id)
-        end
-    end
-    if #Servers > 0 then
-        TeleportService:TeleportToPlaceInstance(PlaceID, Servers[math.random(1, #Servers)], game.Players.LocalPlayer)
-    else
-        TeleportService:Teleport(PlaceID)
-    end
-end
-
--- TỌA ĐỘ ĐẢO
+-- ISLAND LOCATIONS (SEA 1/2/3)
 local SeaIslands = {
     [1] = {
-        Vector3.new(104, 16, 1573), Vector3.new(1064, 16, 1407), Vector3.new(-1203, 4, 391),
-        Vector3.new(1143, 4, -4322), Vector3.new(-655, 7, 1430), Vector3.new(-1601, 17, -2755),
-        Vector3.new(-3834, 6, -2885), Vector3.new(3657, 38, -3215), Vector3.new(4874, 5, -2623),
-        Vector3.new(-5403, 10, -2660), Vector3.new(-5246, 7, -2272), Vector3.new(6073, 39, -3900),
+        Vector3.new(104, 16, 1573), Vector3.new(1064, 16, 1407), Vector3.new(-1203, 4, 391), Vector3.new(1143, 4, -4322),
+        Vector3.new(-655, 7, 1430), Vector3.new(-1601, 17, -2755), Vector3.new(-3834, 6, -2885), Vector3.new(3657, 38, -3215),
+        Vector3.new(4874, 5, -2623), Vector3.new(-5403, 10, -2660), Vector3.new(-5246, 7, -2272), Vector3.new(6073, 39, -3900),
         Vector3.new(5133, 4, 4054)
     },
     [2] = {
-        Vector3.new(-393, 73, 258), Vector3.new(-469, 73, 603), Vector3.new(17, 74, 295),
-        Vector3.new(228, 8, 915), Vector3.new(-1036, 198, -1050), Vector3.new(-5345, 8, -712),
-        Vector3.new(5443, 602, 752), Vector3.new(2174, 39, 909), Vector3.new(-6330, 16, -1247),
-        Vector3.new(5400, 80, -640), Vector3.new(-6105, 16, -5047), Vector3.new(5981, 5, -2317)
+        Vector3.new(-393, 73, 258), Vector3.new(-469, 73, 603), Vector3.new(17, 74, 295), Vector3.new(228, 8, 915),
+        Vector3.new(-1036, 198, -1050), Vector3.new(-5345, 8, -712), Vector3.new(5443, 602, 752), Vector3.new(2174, 39, 909),
+        Vector3.new(-6330, 16, -1247), Vector3.new(5400, 80, -640), Vector3.new(-6105, 16, -5047), Vector3.new(5981, 5, -2317)
     },
     [3] = {
-        Vector3.new(-262, 20, 5301), Vector3.new(-2850, 20, 5340), Vector3.new(-12498, 332, 7879),
-        Vector3.new(-9500, 20, -900), Vector3.new(6044, 20, -134), Vector3.new(2575, 7, 850),
-        Vector3.new(-6100, 16, -2400), Vector3.new(1575, 16, -1333)
+        Vector3.new(-262, 20, 5301), Vector3.new(-2850, 20, 5340), Vector3.new(-12498, 332, 7879), Vector3.new(-9500, 20, -900),
+        Vector3.new(6044, 20, -134), Vector3.new(2575, 7, 850), Vector3.new(-6100, 16, -2400), Vector3.new(1575, 16, -1333)
     }
 }
 
@@ -144,20 +121,36 @@ function GetAllChests()
     return chests
 end
 
--- TWEEN BAY
+-- TWEEN MƯỢT KHÔNG GIẬT
 function TweenTo(pos)
     local TweenService = game:GetService("TweenService")
-    local hrp = game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart")
-    local dist = (hrp.Position - pos).Magnitude
-    local time = dist / getgenv().Speed
-    local info = TweenInfo.new(time, Enum.EasingStyle.Linear)
+    local player = game.Players.LocalPlayer
+    local char = player.Character or player.CharacterAdded:Wait()
+    local hrp = char:WaitForChild("HumanoidRootPart")
+
+    if getgenv().CurrentTween then
+        getgenv().CurrentTween:Cancel()
+        getgenv().CurrentTween = nil
+    end
+
+    local distance = (hrp.Position - pos).Magnitude
+    local duration = distance / getgenv().Speed
+    local info = TweenInfo.new(duration, Enum.EasingStyle.Linear)
     local goal = {CFrame = CFrame.new(pos + Vector3.new(0, 5, 0))}
     local tween = TweenService:Create(hrp, info, goal)
+
+    getgenv().CurrentTween = tween
     tween:Play()
-    tween.Completed:Wait()
+
+    local done = false
+    tween.Completed:Connect(function()
+        done = true
+    end)
+
+    while not done and getgenv().Enabled do task.wait() end
 end
 
--- FARM LOOP
+-- FARM CHEST + SMART HOP
 spawn(function()
     while wait(1) do
         if getgenv().Enabled then
@@ -166,7 +159,7 @@ spawn(function()
             for _,island in pairs(SeaIslands[sea]) do
                 if not getgenv().Enabled then break end
                 TweenTo(island)
-                wait(1)
+                wait(2)
                 local chests = GetAllChests()
                 table.sort(chests, function(a,b)
                     return (a.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <
@@ -182,20 +175,24 @@ spawn(function()
                     if earned > 0 then
                         getgenv().TotalMoney += earned
                         moneyLabel.Text = "Beli nhặt được: " .. tostring(getgenv().TotalMoney)
-                        pcall(function()
-                            game.StarterGui:SetCore("SendNotification", {
-                                Title = "Đã nhặt rương!",
-                                Text = "+ " .. tostring(earned) .. " Beli",
-                                Duration = 2
-                            })
-                        end)
                         found = true
                     end
                 end
             end
             if not found then
-                ServerHop()
+                wait(1)
+                local TeleportService = game:GetService("TeleportService")
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId)
             end
         end
     end
+end)
+
+-- NOTIFY KHI EXECUTE XONG
+pcall(function()
+    game.StarterGui:SetCore("SendNotification", {
+        Title = "Chest Farm | By Chiriku Roblox",
+        Text = "Đã bật script thành công!",
+        Duration = 5
+    })
 end)
