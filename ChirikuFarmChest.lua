@@ -29,7 +29,7 @@ end)
 -- AUTO TEAM
 spawn(function()
     while not game.Players.LocalPlayer.Team or game.Players.LocalPlayer.Team.Name ~= getgenv().Team do
-        for i,v in pairs(game:GetService("Teams"):GetChildren()) do
+        for _,v in pairs(game:GetService("Teams"):GetChildren()) do
             if v.Name == getgenv().Team then
                 game:GetService("ReplicatedStorage").Remotes["CommF_"]:InvokeServer("SetTeam", getgenv().Team)
             end
@@ -68,46 +68,28 @@ toggle.MouseButton1Click:Connect(function()
 end)
 
 -- SAVE SETTINGS ON TELEPORT
-queue_on_teleport([[ 
-    getgenv().Team = "]]..getgenv().Team..[[" 
-    getgenv().Speed = ]]..getgenv().Speed..[[ 
-    getgenv().TotalMoney = ]]..getgenv().TotalMoney..[[ 
-    getgenv().Enabled = true 
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/Chiriku2013/ChirikuFarmChest/refs/heads/main/ChirikuFarmChest.lua"))() 
+queue_on_teleport([[
+    getgenv().Team = "]]..getgenv().Team..[["
+    getgenv().Speed = ]]..getgenv().Speed..[[
+    getgenv().TotalMoney = ]]..getgenv().TotalMoney..[[
+    getgenv().Enabled = true
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/Chiriku2013/ChirikuFarmChest/refs/heads/main/ChirikuFarmChest.lua"))()
 ]])
 
--- ISLAND LOCATIONS (SEA 1/2/3)
-local SeaIslands = {
-    [1] = {
-        Vector3.new(104, 16, 1573), Vector3.new(1064, 16, 1407), Vector3.new(-1203, 4, 391), Vector3.new(1143, 4, -4322),
-        Vector3.new(-655, 7, 1430), Vector3.new(-1601, 17, -2755), Vector3.new(-3834, 6, -2885), Vector3.new(3657, 38, -3215),
-        Vector3.new(4874, 5, -2623), Vector3.new(-5403, 10, -2660), Vector3.new(-5246, 7, -2272), Vector3.new(6073, 39, -3900),
-        Vector3.new(5133, 4, 4054)
-    },
-    [2] = {
-        Vector3.new(-393, 73, 258), Vector3.new(-469, 73, 603), Vector3.new(17, 74, 295), Vector3.new(228, 8, 915),
-        Vector3.new(-1036, 198, -1050), Vector3.new(-5345, 8, -712), Vector3.new(5443, 602, 752), Vector3.new(2174, 39, 909),
-        Vector3.new(-6330, 16, -1247), Vector3.new(5400, 80, -640), Vector3.new(-6105, 16, -5047), Vector3.new(5981, 5, -2317)
-    },
-    [3] = {
-        Vector3.new(-262, 20, 5301), Vector3.new(-2850, 20, 5340), Vector3.new(-12498, 332, 7879), Vector3.new(-9500, 20, -900),
-        Vector3.new(6044, 20, -134), Vector3.new(2575, 7, 850), Vector3.new(-6100, 16, -2400), Vector3.new(1575, 16, -1333)
-    }
-}
-
--- GET SEA
-function GetCurrentSea()
-    local pos = game.Players.LocalPlayer.Character.HumanoidRootPart.Position
-    if workspace:FindFirstChild("ShipWreck") then
-        return 3
-    elseif workspace:FindFirstChild("ForgottenIsland") then
-        return 2
-    else
-        return 1
-    end
+-- TWEEN MƯỢT
+function TweenTo(pos)
+    local TweenService = game:GetService("TweenService")
+    local hrp = game.Players.LocalPlayer.Character:WaitForChild("HumanoidRootPart")
+    local distance = (hrp.Position - pos).Magnitude
+    local tweenTime = distance / getgenv().Speed
+    local tweenInfo = TweenInfo.new(tweenTime, Enum.EasingStyle.Linear)
+    local tweenGoal = {CFrame = CFrame.new(pos + Vector3.new(0, 5, 0))}
+    local tween = TweenService:Create(hrp, tweenInfo, tweenGoal)
+    tween:Play()
+    tween.Completed:Wait()
 end
 
--- GET CHESTS
+-- LẤY CHEST TOÀN BẢN ĐỒ
 function GetAllChests()
     local chests = {}
     for _,v in pairs(workspace:GetDescendants()) do
@@ -121,78 +103,42 @@ function GetAllChests()
     return chests
 end
 
--- TWEEN MƯỢT KHÔNG GIẬT
-function TweenTo(pos)
-    local TweenService = game:GetService("TweenService")
-    local player = game.Players.LocalPlayer
-    local char = player.Character or player.CharacterAdded:Wait()
-    local hrp = char:WaitForChild("HumanoidRootPart")
-
-    if getgenv().CurrentTween then
-        getgenv().CurrentTween:Cancel()
-        getgenv().CurrentTween = nil
-    end
-
-    local distance = (hrp.Position - pos).Magnitude
-    local duration = distance / getgenv().Speed
-    local info = TweenInfo.new(duration, Enum.EasingStyle.Linear)
-    local goal = {CFrame = CFrame.new(pos + Vector3.new(0, 5, 0))}
-    local tween = TweenService:Create(hrp, info, goal)
-
-    getgenv().CurrentTween = tween
-    tween:Play()
-
-    local done = false
-    tween.Completed:Connect(function()
-        done = true
-    end)
-
-    while not done and getgenv().Enabled do task.wait() end
-end
-
--- FARM CHEST + SMART HOP
+-- FARM CHEST
 spawn(function()
-    while wait(1) do
+    wait(2)
+    while task.wait(1) do
         if getgenv().Enabled then
+            local chests = GetAllChests()
+            table.sort(chests, function(a, b)
+                return (a.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <
+                       (b.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+            end)
+
             local found = false
-            local sea = GetCurrentSea()
-            for _,island in pairs(SeaIslands[sea]) do
+            for _, chest in ipairs(chests) do
                 if not getgenv().Enabled then break end
-                TweenTo(island)
-                wait(2)
-                local chests = GetAllChests()
-                table.sort(chests, function(a,b)
-                    return (a.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <
-                           (b.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-                end)
-                for _,chest in pairs(chests) do
-                    if not getgenv().Enabled then break end
-                    local oldBeli = game.Players.LocalPlayer.Data.Beli.Value
-                    TweenTo(chest.Position)
-                    wait(0.2)
-                    local newBeli = game.Players.LocalPlayer.Data.Beli.Value
-                    local earned = newBeli - oldBeli
-                    if earned > 0 then
-                        getgenv().TotalMoney += earned
-                        moneyLabel.Text = "Beli nhặt được: " .. tostring(getgenv().TotalMoney)
-                        found = true
-                    end
+                local oldBeli = game.Players.LocalPlayer.Data.Beli.Value
+                TweenTo(chest.Position)
+                task.wait(0.2)
+                local newBeli = game.Players.LocalPlayer.Data.Beli.Value
+                local earned = newBeli - oldBeli
+                if earned > 0 then
+                    getgenv().TotalMoney += earned
+                    moneyLabel.Text = "Beli nhặt được: " .. tostring(getgenv().TotalMoney)
+                    pcall(function()
+                        game.StarterGui:SetCore("SendNotification", {
+                            Title = "Nhặt được Beli!",
+                            Text = "+ " .. tostring(earned),
+                            Duration = 2
+                        })
+                    end)
+                    found = true
                 end
             end
+
             if not found then
-                wait(1)
-                local TeleportService = game:GetService("TeleportService")
-                TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId)
+                game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, game.JobId)
             end
         end
     end
-end)
-
--- NOTIFY KHI EXECUTE XONG
-pcall(function()
-    game.StarterGui:SetCore("SendNotification", {
-        Title = "Chest Farm | By Chiriku Roblox",
-        Text = "Đã bật script thành công!",
-        Duration = 5
-    })
 end)
