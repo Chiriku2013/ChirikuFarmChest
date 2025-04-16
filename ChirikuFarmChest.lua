@@ -84,31 +84,42 @@ function Hop()
 	ts:Teleport(game.PlaceId, game.Players.LocalPlayer)
 end
 
+-- TÌM CHEST
+function FindChest()
+	local chests = {}
+	for _,v in pairs(workspace:GetDescendants()) do
+		if v:IsA("Model") and v:FindFirstChildWhichIsA("TouchTransmitter", true) and v:FindFirstChildWhichIsA("BasePart") then
+			local chestPart = v:FindFirstChild("HumanoidRootPart") or v:FindFirstChildWhichIsA("BasePart")
+			if chestPart and v.Name:lower():find("chest") then
+				table.insert(chests, {Model = v, Part = chestPart})
+			end
+		end
+	end
+	return chests
+end
+
 -- AUTO CHEST FARM
 spawn(function()
 	while wait(1) do
-		if getgenv().Enabled then
-			local chests = {}
-			for _,v in pairs(workspace:GetDescendants()) do
-				if v:IsA("Model") and v:FindFirstChild("TouchInterest") and v:FindFirstChild("HumanoidRootPart") and v.Name:lower():find("chest") then
-					table.insert(chests, v)
-				end
-			end
+		if getgenv().Enabled and game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+			local chests = FindChest()
 			if #chests == 0 then
 				Hop()
 			else
 				table.sort(chests, function(a, b)
-					return (a.HumanoidRootPart.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).magnitude <
-					       (b.HumanoidRootPart.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).magnitude
+					local pos = game.Players.LocalPlayer.Character.HumanoidRootPart.Position
+					return (a.Part.Position - pos).Magnitude < (b.Part.Position - pos).Magnitude
 				end)
-				for _,v in pairs(chests) do
+				for _,data in pairs(chests) do
 					if not getgenv().Enabled then break end
+					local part = data.Part
 					local oldBeli = game.Players.LocalPlayer.Data.Beli.Value
 					pcall(function()
 						local char = game.Players.LocalPlayer.Character
 						char.Humanoid:ChangeState(11)
-						char:WaitForChild("HumanoidRootPart").CFrame = v.HumanoidRootPart.CFrame + Vector3.new(0, 15, 0)
-						wait((char.HumanoidRootPart.Position - v.HumanoidRootPart.Position).magnitude / getgenv().Speed)
+						char:WaitForChild("HumanoidRootPart").CFrame = part.CFrame + Vector3.new(0, 15, 0)
+						local dist = (char.HumanoidRootPart.Position - part.Position).Magnitude
+						for i = 1, math.ceil(dist / getgenv().Speed * 10) do wait(0.01) end
 					end)
 					local newBeli = game.Players.LocalPlayer.Data.Beli.Value
 					local earned = newBeli - oldBeli
